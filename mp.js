@@ -1,11 +1,17 @@
-var path = require('path')
-var fs = require('fs')
-var vm = require('vm')
+
+
+
+;// /Users/paulfrazee/doubter/mp2/init.js
 
 global.initialize = () => {
   global.candidatePrograms = []
   global.candidateResults = []
 }
+
+;// /Users/paulfrazee/doubter/mp2/gen.js
+
+var path = require('path')
+var fs = require('fs')
 
 global.readSuggestions = () => {
   // read the files from paths passed as argvs
@@ -29,6 +35,10 @@ global.generatePrograms = () => {
   })
   global.candidatePrograms.push(candidateProgram)
 }
+
+;// /Users/paulfrazee/doubter/mp2/sim.js
+
+var vm = require('vm')
 
 global.runProgram = program => {
   // TODO improve the collected metrics (eg execution time)
@@ -66,6 +76,8 @@ global.simulate = () => {
   })
 }
 
+;// /Users/paulfrazee/doubter/mp2/out.js
+
 global.outputBestProgram = () => {
   // select the best-performing candidate
   global.candidateResults.sort((a, b) => {
@@ -76,6 +88,8 @@ global.outputBestProgram = () => {
   // output the program
   if (bestResult) console.log(bestResult.program.code)
 }
+
+;// /Users/paulfrazee/doubter/mp2/main.js
 
 global.initialize()
 global.generatePrograms()
