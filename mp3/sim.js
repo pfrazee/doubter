@@ -2,8 +2,10 @@ var vm = require('vm')
 var path = require('path')
 var fs = require('fs')
 
-var aJsPath = path.join(process.cwd(), 'mp3/test-fixtures/a/a.js')
-var aJs = (!global.isInASimulation) ? fs.readFileSync(aJsPath, 'utf8') : ''
+var onefileJsPath = path.join(process.cwd(), 'mp3/test-fixtures/onefile.js')
+var onefileJs = (!global.isInASimulation) ? fs.readFileSync(onefileJsPath, 'utf8') : ''
+var twofilesAJsPath = path.join(process.cwd(), 'mp3/test-fixtures/twofiles-a.js')
+var twofilesBJsPath = path.join(process.cwd(), 'mp3/test-fixtures/twofiles-b.js')
 
 function TestsFailure (msg) {
   this.name = 'TestsFailure'
@@ -11,22 +13,27 @@ function TestsFailure (msg) {
 }
 
 function runTests (script) {
-  var defaultContext = { 
+  const genContext = () => ({ 
     require,
     global: { isInASimulation: true },
     process: { argv: [null, null], cwd: process.cwd, hrtime: process.hrtime }, 
     console: { log: (()=>{}), error: (()=>{}) }
-  }
+  })
 
   if (global.isInASimulation) {
-    SimulationEnvTests.forEach(test => test(script, Object.assign({}, defaultContext)))
+    SimulationEnvTests.forEach(test => test(script, genContext()))
   } else {
-    ExecutorEnvTests.forEach(test => test(script, Object.assign({}, defaultContext)))
+    ExecutorEnvTests.forEach(test => test(script, genContext()))
   }
 }
 
 const SimulationEnvTests = [
-  // TODO no tests should be run within the simulation, for now
+  function (script, context) {
+    // make sure that it evaluates correctly
+    //
+
+    script.runInNewContext(context) // will throw on evaluation error
+  }
 ]
 
 const ExecutorEnvTests = [
@@ -35,15 +42,34 @@ const ExecutorEnvTests = [
     //
 
     var generated = false
-    context.process.argv.push('mp3/test-fixtures/a/a.js')
+    context.process.argv.push('mp3/test-fixtures/onefile.js')
     context.console.log = output => {
-      // console.error('sublog', output)
       generated = true
-      if (output !== ('// '+aJsPath+'\n\n'+aJs)) throw new TestsFailure('Incorrect output')
+      if (output !== ('// '+onefileJsPath+'\n\n'+onefileJs)) throw new TestsFailure('Incorrect output')
     }
-    // context.console.error = console.error.bind(console, 'suberr')
     script.runInNewContext(context)
     if (!generated) throw new TestsFailure("Did not generate")
+  },
+  function (script, context) {
+    // assert that two inputs are output in the correct order
+    //
+
+    var generated = false
+    var generatedCorrectly = false
+    context.process.argv.push('mp3/test-fixtures/twofiles-a.js')
+    context.process.argv.push('mp3/test-fixtures/twofiles-b.js')
+    context.console.log = output => {
+      generated = true
+    }
+    context.console.error = (...args) => {
+      output = args.join(' ')
+      if (output.indexOf(`selected ${twofilesAJsPath} ${twofilesBJsPath}`) >= 0) {
+        generatedCorrectly = true
+      }
+    }
+    script.runInNewContext(context)
+    if (!generated) throw new TestsFailure("Did not generate")
+    if (!generatedCorrectly) throw new TestsFailure("Did not generate in the correct order")
   }
 ]
 

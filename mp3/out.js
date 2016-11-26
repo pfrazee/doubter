@@ -7,7 +7,7 @@ global.outputBestProgram = () => {
 
   // output the program
   if (bestResult) {
-    console.error('selected', bestResult.program.filepaths)
+    console.error('selected', bestResult.program.filepaths.join(' '))
     console.error('measured exec time %d ms', bestResult.result.execTime / 1e6)
     console.log(bestResult.program.code)
   }
