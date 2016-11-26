@@ -4,7 +4,7 @@ global.runProgram = program => {
   // TODO improve the collected metrics (eg execution time)
 
   var script = new vm.Script(program.code)
-  var context = { require, global: {}, process: { argv: [] }, console: { log: ()=>{}, error: ()=>{} } }
+  var context = { require, global: {}, process: { argv: [], cwd: process.cwd }, console: { log: ()=>{}, error: ()=>{} } }
   try {
     // run the script
     var resultValue = script.runInNewContext(context)

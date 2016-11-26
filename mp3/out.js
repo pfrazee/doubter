@@ -6,5 +6,8 @@ global.outputBestProgram = () => {
   var bestResult = global.candidateResults[0]
 
   // output the program
-  if (bestResult) console.log(bestResult.program.code)
+  if (bestResult) {
+    console.error('selected', bestResult.program.filepaths)
+    console.log(bestResult.program.code)
+  }
 }
