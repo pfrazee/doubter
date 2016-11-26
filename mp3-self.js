@@ -1,17 +1,29 @@
-// /Users/paulfrazee/doubter/mp3/out.js
+// /Users/paulfrazee/doubter/mp3/gen.js
 
-global.outputBestProgram = () => {
-  // select the best-performing candidate
-  global.candidateResults.sort((a, b) => {
-    return 1 // TODO look at result metrics
+var path = require('path')
+var fs = require('fs')
+
+global.readSuggestions = () => {
+  // read the files from paths passed as argvs
+  var filepaths = process.argv.slice(2).map(name => path.join(process.cwd(), name))
+  return filepaths.map(filepath => ({
+    filepath,
+    code: fs.readFileSync(filepath, 'utf8')
+  }))
+}
+
+global.generatePrograms = () => {
+  var suggestionFiles = global.readSuggestions()
+
+  // produce candidate programs
+  var permutations = global.permute(suggestionFiles)
+  permutations.forEach(permutation => {
+    global.candidatePrograms.push({
+      filepaths: permutation.map(p => p.filepath),
+      code: permutation.map(p => ('// ' + p.filepath + '\n\n' + p.code)).join('\n\n')
+    })
   })
-  var bestResult = global.candidateResults[0]
-
-  // output the program
-  if (bestResult) {
-    console.error('Selected', bestResult.program.filepaths)
-    console.log(bestResult.program.code)
-  }
+  console.error('generated %d programs from %d suggestions', global.candidatePrograms.length, suggestionFiles.length)
 }
 
 // /Users/paulfrazee/doubter/mp3/permute.js
@@ -294,39 +306,28 @@ var permutationCombination = function(ary, fun) {
 // export
 global.permute = permutationCombination
 
-// /Users/paulfrazee/doubter/mp3/gen.js
-
-var path = require('path')
-var fs = require('fs')
-
-global.readSuggestions = () => {
-  // read the files from paths passed as argvs
-  var filepaths = process.argv.slice(2).map(name => path.join(process.cwd(), name))
-  return filepaths.map(filepath => ({
-    filepath,
-    code: fs.readFileSync(filepath, 'utf8')
-  }))
-}
-
-global.generatePrograms = () => {
-  var suggestionFiles = global.readSuggestions()
-
-  // produce candidate programs
-  var permutations = global.permute(suggestionFiles)
-  permutations.forEach(permutation => {
-    global.candidatePrograms.push({
-      filepaths: permutation.map(p => p.filepath),
-      code: permutation.map(p => ('// ' + p.filepath + '\n\n' + p.code)).join('\n\n')
-    })
-  })
-  console.error('generated %d programs from %d suggestions', global.candidatePrograms.length, suggestionFiles.length)
-}
-
 // /Users/paulfrazee/doubter/mp3/init.js
 
 global.initialize = () => {
   global.candidatePrograms = []
   global.candidateResults = []
+}
+
+// /Users/paulfrazee/doubter/mp3/out.js
+
+global.outputBestProgram = () => {
+  // select the best-performing candidate
+  global.candidateResults.sort((a, b) => {
+    return a.result.execTime - b.result.execTime
+  })
+  var bestResult = global.candidateResults[0]
+
+  // output the program
+  if (bestResult) {
+    console.error('selected', bestResult.program.filepaths)
+    console.error('measured exec time %d ms', bestResult.result.execTime / 1e6)
+    console.log(bestResult.program.code)
+  }
 }
 
 // /Users/paulfrazee/doubter/mp3/sim.js
@@ -347,7 +348,7 @@ function runTests (script) {
   var defaultContext = { 
     require,
     global: { isInASimulation: true },
-    process: { argv: [null, null], cwd: process.cwd }, 
+    process: { argv: [null, null], cwd: process.cwd, hrtime: process.hrtime }, 
     console: { log: (()=>{}), error: (()=>{}) }
   }
 
@@ -387,11 +388,14 @@ function runProgram (program) {
   var script = new vm.Script(program.code)
   try {
     // run the test suite on the script
+    var start = process.hrtime()
     runTests(script)
+    var execTime = process.hrtime(start)
 
     // success, return information about the execution
     return {
       correct: true,
+      execTime: execTime[0] * 1e9 + execTime[1],
       error: null
     }
   } catch (error) {

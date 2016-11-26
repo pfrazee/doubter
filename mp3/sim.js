@@ -14,7 +14,7 @@ function runTests (script) {
   var defaultContext = { 
     require,
     global: { isInASimulation: true },
-    process: { argv: [null, null], cwd: process.cwd }, 
+    process: { argv: [null, null], cwd: process.cwd, hrtime: process.hrtime }, 
     console: { log: (()=>{}), error: (()=>{}) }
   }
 
@@ -54,11 +54,14 @@ function runProgram (program) {
   var script = new vm.Script(program.code)
   try {
     // run the test suite on the script
+    var start = process.hrtime()
     runTests(script)
+    var execTime = process.hrtime(start)
 
     // success, return information about the execution
     return {
       correct: true,
+      execTime: execTime[0] * 1e9 + execTime[1],
       error: null
     }
   } catch (error) {

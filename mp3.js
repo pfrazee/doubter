@@ -333,7 +333,7 @@ function runTests (script) {
   var defaultContext = { 
     require,
     global: { isInASimulation: true },
-    process: { argv: [null, null], cwd: process.cwd }, 
+    process: { argv: [null, null], cwd: process.cwd, hrtime: process.hrtime }, 
     console: { log: (()=>{}), error: (()=>{}) }
   }
 
@@ -373,11 +373,14 @@ function runProgram (program) {
   var script = new vm.Script(program.code)
   try {
     // run the test suite on the script
+    var start = process.hrtime()
     runTests(script)
+    var execTime = process.hrtime(start)
 
     // success, return information about the execution
     return {
       correct: true,
+      execTime: execTime[0] * 1e9 + execTime[1],
       error: null
     }
   } catch (error) {
@@ -412,13 +415,14 @@ global.simulate = () => {
 global.outputBestProgram = () => {
   // select the best-performing candidate
   global.candidateResults.sort((a, b) => {
-    return 1 // TODO look at result metrics
+    return a.result.execTime - b.result.execTime
   })
   var bestResult = global.candidateResults[0]
 
   // output the program
   if (bestResult) {
-    console.error('Selected', bestResult.program.filepaths)
+    console.error('selected', bestResult.program.filepaths)
+    console.error('measured exec time %d ms', bestResult.result.execTime / 1e6)
     console.log(bestResult.program.code)
   }
 }

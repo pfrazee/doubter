@@ -26,8 +26,8 @@ echo "-- a simple correctness test --"
 node ./mp3.js ./mp3/*.js > ./mp3-self.js
 echo "...again..."
 node ./mp3-self.js ./mp3/*.js > ./mp3-self2.js
-if diff mp3-self.js mp3-self2.js ; then
-    echo "Same thing was output each time! We're calling that a success right now."
+if diff mp3-self.js mp3-self2.js &> /dev/null ; then
+    echo "Same thing was output each time."
 else
-    echo "Different things were output in subsequent runs. That's probably a failure, look into it."
+    echo "Different things were output in subsequent runs."
 fi
