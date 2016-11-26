@@ -1,17 +1,15 @@
 
 
+;// /Users/paulfrazee/doubter/mp1/main.js
 
-;// /Users/paulfrazee/doubter/mp2/init.js
+var path = require('path')
+var fs = require('fs')
+var vm = require('vm')
 
 global.initialize = () => {
   global.candidatePrograms = []
   global.candidateResults = []
 }
-
-;// /Users/paulfrazee/doubter/mp2/gen.js
-
-var path = require('path')
-var fs = require('fs')
 
 global.readSuggestions = () => {
   // read the files from paths passed as argvs
@@ -34,17 +32,14 @@ global.generatePrograms = () => {
     candidateProgram.code += `\n\n;// ${f.filepath}\n\n` + f.code
   })
   global.candidatePrograms.push(candidateProgram)
+  console.error('created new program from %d suggestions', suggestionFiles.length)
 }
-
-;// /Users/paulfrazee/doubter/mp2/sim.js
-
-var vm = require('vm')
 
 global.runProgram = program => {
   // TODO improve the collected metrics (eg execution time)
 
   var script = new vm.Script(program.code)
-  var context = { require, global: {}, process: { argv: [] }, console }
+  var context = { require, global: {}, process: { argv: [] }, console: { log: ()=>{}, error: ()=>{} } }
   try {
     // run the script
     var resultValue = script.runInNewContext(context)
@@ -56,6 +51,8 @@ global.runProgram = program => {
     }
   } catch (error) {
     // failure, return information about the execution
+    console.error('Execution failed, all is lost', error)
+    process.exit(1) // this early in the bootstrap, a failure means the entire system is dead
     return {
       correct: false,
       error
@@ -76,8 +73,6 @@ global.simulate = () => {
   })
 }
 
-;// /Users/paulfrazee/doubter/mp2/out.js
-
 global.outputBestProgram = () => {
   // select the best-performing candidate
   global.candidateResults.sort((a, b) => {
@@ -88,8 +83,6 @@ global.outputBestProgram = () => {
   // output the program
   if (bestResult) console.log(bestResult.program.code)
 }
-
-;// /Users/paulfrazee/doubter/mp2/main.js
 
 global.initialize()
 global.generatePrograms()

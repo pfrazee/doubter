@@ -16,8 +16,6 @@ global.runProgram = program => {
     }
   } catch (error) {
     // failure, return information about the execution
-    console.error('Execution failed, all is lost', error)
-    process.exit(1) // this early in the bootstrap, a failure means the entire system is dead
     return {
       correct: false,
       error
@@ -36,4 +34,5 @@ global.simulate = () => {
       global.candidateResults.push({ program, result })
     }
   })
+  console.error('%d programs found correct', global.candidateResults.length)
 }

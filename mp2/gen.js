@@ -22,4 +22,5 @@ global.generatePrograms = () => {
     candidateProgram.code += `\n\n;// ${f.filepath}\n\n` + f.code
   })
   global.candidatePrograms.push(candidateProgram)
+  console.error('created new program from %d suggestions', suggestionFiles.length)
 }
